@@ -1,0 +1,106 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// 1. جدول الطالب (يطابق حقول شاشة التسجيل)
+model Student {
+  id            String    @id @default(uuid())
+  studentId     String    @unique // الرقم الجامعي
+  name          String
+  email         String    @unique
+  password      String
+  phone         String?
+  dob           DateTime? // تاريخ الميلاد
+  gender        String    // "ذكر" أو "أنثى"
+  major         String?    // التخصص
+  academicLevel Int?       // المستوى الأكاديمي
+
+  preferences   Preference?
+  schedules     Schedule[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// 2. جدول تفضيلات الطالب (لخوارزمية الجدول الذكي)
+model Preference {
+  id               String  @id @default(uuid())
+  studentId        String  @unique
+  preferredTime    String  // "MORNING", "EVENING", "ANY"
+  preferredOffDays String? // أيام الإجازة المفضلة، مثلاً: "THU"
+  maxCredits       Int     @default(18) // الحد الأقصى للساعات
+
+  student          Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+
+// 3. جدول المقررات
+model Course {
+  id          String   @id @default(uuid())
+  code        String   @unique // رمز المقرر (مثال: CS101)
+  name        String   // اسم المقرر
+  credits     Int      // الساعات المعتمدة
+
+  sections    Section[]
+  
+  // المتطلبات السابقة للمقرر (علاقة ذاتية Many-to-Many)
+  prerequisites     CoursePrerequisite[] @relation("CourseToPrerequisite")
+  isPrerequisiteFor CoursePrerequisite[] @relation("PrerequisiteToCourse")
+}
+
+// جدول وسيط لإدارة المتطلبات السابقة للمقررات (Explicit Many-to-Many)
+model CoursePrerequisite {
+  courseId       String
+  prerequisiteId String
+
+  course       Course @relation("CourseToPrerequisite", fields: [courseId], references: [id], onDelete: Cascade)
+  prerequisite Course @relation("PrerequisiteToCourse", fields: [prerequisiteId], references: [id], onDelete: Cascade)
+
+  @@id([courseId, prerequisiteId])
+}
+
+// 4. جدول الشُعب الدراسية
+model Section {
+  id            String   @id @default(uuid())
+  sectionNumber String   // رقم الشعبة
+  courseId      String
+  instructor    String?  // اسم الدكتور
+  days          String   // أيام المحاضرات (مثال: "SUN,TUE,THU")
+  startTime     String   // وقت البداية (مثال: "08:00")
+  endTime       String   // وقت النهاية (مثال: "08:50")
+  room          String?  // القاعة
+
+  course        Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  schedules     ScheduleSection[]
+
+  // لا يمكن تكرار نفس رقم الشعبة لنفس المقرر
+  @@unique([courseId, sectionNumber]) 
+}
+
+// 5. جدول الجداول المحفوظة
+model Schedule {
+  id        String   @id @default(uuid())
+  studentId String
+  type      String   // "ORIGINAL" (الجدول الأصلي) أو "SUGGESTED" (مقترح من النظام)
+  createdAt DateTime @default(now())
+
+  student   Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  sections  ScheduleSection[]
+}
+
+// 6. جدول وسيط لربط الشعب بالجداول (جدول واحد يحتوي على عدة شعب، والشعبة قد تكون في عدة جداول)
+model ScheduleSection {
+  scheduleId String
+  sectionId  String
+
+  schedule   Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  section    Section  @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@id([scheduleId, sectionId])
+}

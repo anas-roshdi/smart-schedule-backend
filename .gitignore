@@ -1,0 +1,22 @@
+node_modules/
+dist/
+
+# أسرار
+.env
+.env.*
+!.env.example
+
+# قاعدة البيانات المحلية
+*.db
+*.db-journal
+dev.db
+
+# ملفات Prisma المولّدة (تُعاد بـ prisma generate)
+src/generated/
+
+# نظام التشغيل والمحرر
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
