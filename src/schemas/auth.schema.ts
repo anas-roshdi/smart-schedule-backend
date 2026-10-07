@@ -1,4 +1,8 @@
 import { z } from 'zod';
+export const loginSchema = z.object({
+    studentId: z.string().min(1, 'الرقم الجامعي مطلوب'),
+    password: z.string().min(1, 'كلمة المرور مطلوبة'),
+});
 
 export const registerSchema = z.object({
     studentId: z
