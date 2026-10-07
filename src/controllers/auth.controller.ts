@@ -55,9 +55,10 @@ export const registerHandler = async (req: Request, res: Response) => {
 };
 
 export const loginHandler = async (req: Request, res: Response) => {
-    const { studentId, password } = loginSchema.parse(req.body);
+    const { email, password } = loginSchema.parse(req.body);
 
-    const student = await prisma.student.findUnique({ where: { studentId } });
+    const student = await prisma.student.findUnique({ where: { email } });
+
 
     // رسالة موحدة سواء كان الحساب غير موجود أو كلمة المرور خاطئة
     const INVALID = { message: 'بيانات الدخول غير صحيحة', code: 'INVALID_CREDENTIALS' };
